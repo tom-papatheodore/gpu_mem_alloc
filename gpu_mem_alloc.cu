@@ -3,16 +3,15 @@
 #include <string>
 #include <stdio.h>
 #include <getopt.h>
-#include <hip/hip_runtime.h>
 
-// Macro for checking errors in HIP API calls
-#define hipErrorCheck(call)                                                               \
-do{                                                                                       \
-    hipError_t hipErr = call;                                                             \
-    if(hipSuccess != hipErr){                                                             \
-      printf("HIP Error - %s:%d: '%s'\n", __FILE__, __LINE__, hipGetErrorString(hipErr)); \
-      exit(0);                                                                            \
-    }                                                                                     \
+// Macro for checking errors in CUDA API calls
+#define cudaErrorCheck(call)                                                                   \
+do{                                                                                            \
+    cudaError_t cudaErr = call;                                                                \
+    if(cudaSuccess != cudaErr){                                                                \
+        printf("CUDA Error - %s:%d: '%s'\n", __FILE__, __LINE__, cudaGetErrorString(cudaErr)); \
+        exit(0);                                                                               \
+    }                                                                                          \
 }while(0)
 
 /* =================================================================================
@@ -90,12 +89,12 @@ int main(int argc, char *argv[])
     size_t mem_per_iter = width * height * depth * sizeof(float);
     size_t tryMem = mem_per_iter * N;
 
-    hipPitchedPtr pptr[256];
+    cudaPitchedPtr pptr[256];
 
     size_t freeInternal(0u);
     size_t totalInternal(0u);
 
-    hipErrorCheck( hipMemGetInfo(&freeInternal, &totalInternal) );   
+    cudaErrorCheck( cudaMemGetInfo(&freeInternal, &totalInternal) );   
 
     std::cout << "================================================="                        << std::endl;
     std::cout << "Total GPU Mem                   (B): " << totalInternal                   << std::endl;
@@ -114,13 +113,13 @@ int main(int argc, char *argv[])
 
     for(int i=0; i<N; i++){
 
-        hipExtent extent = make_hipExtent(width * sizeof(float), height, depth);
-        hipErrorCheck( hipMalloc3D(&pptr[i], extent) );
+        cudaExtent extent = make_cudaExtent(width * sizeof(float), height, depth);
+        cudaErrorCheck( cudaMalloc3D(&pptr[i], extent) );
 
         requested_memory_sum = requested_memory_sum + mem_per_iter;
         actual_memory_sum    = actual_memory_sum + pptr[i].pitch * height * depth;
 
-        hipErrorCheck( hipMemGetInfo(&freeInternal, &totalInternal) );
+        cudaErrorCheck( cudaMemGetInfo(&freeInternal, &totalInternal) );
 
         std::cout << "----- "                << "Iteration " << i     << std::endl;
         std::cout << "Width requested (B): " << width * sizeof(float) << std::endl;
